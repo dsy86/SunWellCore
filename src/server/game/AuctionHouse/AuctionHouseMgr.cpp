@@ -156,9 +156,12 @@ void AuctionHouseMgr::SendAuctionSuccessfulMail(AuctionEntry* auction, SQLTransa
             owner->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_SOLD, auction->bid);
             owner->GetSession()->SendAuctionOwnerNotification(auction);
         }
+		Item* points = Item::CreateItem(sWorld->getIntConfig(CONFIG_POINT_ITEM), profit);
+		if (points)
+			points->SaveToDB(trans);                               // save for prevent lost at next mail load, if send fail then item will deleted
 
         MailDraft(auction->BuildAuctionMailSubject(AUCTION_SUCCESSFUL), AuctionEntry::BuildAuctionMailBody(auction->bidder, auction->bid, auction->buyout, auction->deposit, auction->GetAuctionCut()))
-            .AddMoney(profit)
+			.AddItem(points)
             .SendMailTo(trans, MailReceiver(owner, auction->owner), auction, MAIL_CHECK_MASK_COPIED, sWorld->getIntConfig(CONFIG_MAIL_DELIVERY_DELAY));
 
 		if (auction->bid >= 500*GOLD)
@@ -220,8 +223,11 @@ void AuctionHouseMgr::SendAuctionOutbiddedMail(AuctionEntry* auction, uint32 new
         if (oldBidder && newBidder)
             oldBidder->GetSession()->SendAuctionBidderNotification(auction->GetHouseId(), auction->Id, newBidder->GetGUID(), newPrice, auction->GetAuctionOutBid(), auction->item_template);
 
-        MailDraft(auction->BuildAuctionMailSubject(AUCTION_OUTBIDDED), AuctionEntry::BuildAuctionMailBody(auction->owner, auction->bid, auction->buyout, auction->deposit, auction->GetAuctionCut()))
-            .AddMoney(auction->bid)
+		Item* points = Item::CreateItem(sWorld->getIntConfig(CONFIG_POINT_ITEM), auction->bid);
+		if (points)
+			points->SaveToDB(trans);                               // save for prevent lost at next mail load, if send fail then item will deleted
+		MailDraft(auction->BuildAuctionMailSubject(AUCTION_OUTBIDDED), AuctionEntry::BuildAuctionMailBody(auction->owner, auction->bid, auction->buyout, auction->deposit, auction->GetAuctionCut()))
+			.AddItem(points)
             .SendMailTo(trans, MailReceiver(oldBidder, auction->bidder), auction, MAIL_CHECK_MASK_COPIED);
     }
 }
@@ -237,10 +243,16 @@ void AuctionHouseMgr::SendAuctionCancelledToBidderMail(AuctionEntry* auction, SQ
         bidder_accId = sObjectMgr->GetPlayerAccountIdByGUID(bidder_guid);
 
     // bidder exist
-    if (bidder || bidder_accId)
-        MailDraft(auction->BuildAuctionMailSubject(AUCTION_CANCELLED_TO_BIDDER), AuctionEntry::BuildAuctionMailBody(auction->owner, auction->bid, auction->buyout, auction->deposit, 0))
-            .AddMoney(auction->bid)
-            .SendMailTo(trans, MailReceiver(bidder, auction->bidder), auction, MAIL_CHECK_MASK_COPIED);
+	if (bidder || bidder_accId)
+	{
+		Item* points = Item::CreateItem(sWorld->getIntConfig(CONFIG_POINT_ITEM), auction->bid);
+		if (points)
+			points->SaveToDB(trans);                               // save for prevent lost at next mail load, if send fail then item will deleted
+
+		MailDraft(auction->BuildAuctionMailSubject(AUCTION_CANCELLED_TO_BIDDER), AuctionEntry::BuildAuctionMailBody(auction->owner, auction->bid, auction->buyout, auction->deposit, 0))
+			.AddItem(points)
+			.SendMailTo(trans, MailReceiver(bidder, auction->bidder), auction, MAIL_CHECK_MASK_COPIED);
+	}
 }
 
 void AuctionHouseMgr::LoadAuctionItems()

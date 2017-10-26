@@ -255,13 +255,16 @@ void WorldSession::HandleAuctionSellItem(WorldPacket & recvData)
         AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->getFaction());
 
         uint32 deposit = sAuctionMgr->GetAuctionDeposit(auctionHouseEntry, etime, item, finalCount);
-        if (!_player->HasEnoughMoney(deposit))
+        //if (!_player->HasEnoughMoney(deposit))
+		if (!_player->HasItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), uint32(deposit)))
         {
             SendAuctionCommandResult(0, AUCTION_SELL_ITEM, ERR_AUCTION_NOT_ENOUGHT_MONEY);
+			ChatHandler(_player->GetSession()).PSendSysMessage("You dont have enough points. ");
             return;
         }
 
-        _player->ModifyMoney(-int32(deposit));
+        //_player->ModifyMoney(-int32(deposit));
+		_player->DestroyItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), deposit, true);
 
         AuctionEntry* AH = new AuctionEntry;
         AH->Id = sObjectMgr->GenerateAuctionID();
@@ -430,10 +433,12 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket & recvData)
         return;
     }
 
-    if (!player->HasEnoughMoney(price))
+    //if (!player->HasEnoughMoney(price))
+	if (!player->HasItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), uint32(price)))
     {
         //you don't have enought money!, client tests!
         //SendAuctionCommandResult(auction->auctionId, AUCTION_PLACE_BID, ???);
+		ChatHandler(player->GetSession()).PSendSysMessage("You dont have enough points. ");
         return;
     }
 
@@ -444,16 +449,19 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket & recvData)
         if (auction->bidder > 0)
         {
             if (auction->bidder == player->GetGUIDLow())
-                player->ModifyMoney(-int32(price - auction->bid));
+                //player->ModifyMoney(-int32(price - auction->bid));
+				player->DestroyItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), price - auction->bid, true);
             else
             {
                 // mail to last bidder and return money
                 sAuctionMgr->SendAuctionOutbiddedMail(auction, price, GetPlayer(), trans);
-                player->ModifyMoney(-int32(price));
+                //player->ModifyMoney(-int32(price));
+				player->DestroyItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), price, true);
             }
         }
         else
-            player->ModifyMoney(-int32(price));
+            //player->ModifyMoney(-int32(price));
+			player->DestroyItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), price, true);
 
         auction->bidder = player->GetGUIDLow();
         auction->bid = price;
@@ -471,10 +479,12 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket & recvData)
     {
         //buyout:
         if (player->GetGUIDLow() == auction->bidder)
-            player->ModifyMoney(-int32(auction->buyout - auction->bid));
+            //player->ModifyMoney(-int32(auction->buyout - auction->bid));
+			player->DestroyItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), auction->buyout - auction->bid, true);
         else
         {
-            player->ModifyMoney(-int32(auction->buyout));
+            //player->ModifyMoney(-int32(auction->buyout));
+			player->DestroyItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), auction->buyout, true);
             if (auction->bidder)                          //buyout for bidded auction ..
                 sAuctionMgr->SendAuctionOutbiddedMail(auction, auction->buyout, GetPlayer(), trans);
         }
@@ -534,11 +544,16 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket & recvData)
             if (auction->bidder > 0)                        // If we have a bidder, we have to send him the money he paid
             {
                 uint32 auctionCut = auction->GetAuctionCut();
-                if (!player->HasEnoughMoney(auctionCut))          //player doesn't have enough money, maybe message needed
-                    return;
+                //if (!player->HasEnoughMoney(auctionCut))          //player doesn't have enough money, maybe message needed
+				if (!player->HasItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), auctionCut))
+				{
+					ChatHandler(player->GetSession()).PSendSysMessage("You dont have enough points. ");
+					return;
+				}
                 //some auctionBidderNotification would be needed, but don't know that parts..
                 sAuctionMgr->SendAuctionCancelledToBidderMail(auction, trans);
-                player->ModifyMoney(-int32(auctionCut));
+                //player->ModifyMoney(-int32(auctionCut));
+				player->DestroyItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), auctionCut, true);
             }
 
             // item will deleted or added to received mail list
