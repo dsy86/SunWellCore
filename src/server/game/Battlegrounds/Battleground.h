@@ -242,6 +242,12 @@ enum BattlegroundStartingEventsIds
 };
 #define BG_STARTING_EVENT_COUNT 4
 
+struct RewardItems
+{
+    uint32 item;
+    uint32 count;
+};
+
 struct BattlegroundScore
 {
     BattlegroundScore(Player* player) : KillingBlows(0), Deaths(0), HonorableKills(0), BonusHonor(0),
@@ -345,6 +351,8 @@ class Battleground
         TeamId GetWinner() const             { return m_WinnerId; }
         uint32 GetScriptId() const          { return ScriptId; }
         uint32 GetBonusHonorFromKill(uint32 kills) const;
+		RewardItems GetWinnerItems() const { return m_WinnerItems; }
+		RewardItems GetLoserItems() const { return m_LoserItems; }
 
         // Set methods:
         void SetName(char const* Name)      { m_Name = Name; }
@@ -433,6 +441,14 @@ class Battleground
             Y = m_TeamStartLocY[teamId];
             Z = m_TeamStartLocZ[teamId];
             O = m_TeamStartLocO[teamId];
+        }
+
+		void SetRewardItems(uint32 winnerItem, uint32 winnerItemCount, uint32 loserItem, uint32 loserItemCount)
+        {
+            m_WinnerItems.item = winnerItem;
+            m_WinnerItems.count = winnerItemCount;
+            m_LoserItems.item = loserItem;
+            m_LoserItems.count = loserItemCount;
         }
 
         void SetStartMaxDist(float startMaxDist) { m_StartMaxDist = startMaxDist; }
@@ -716,5 +732,7 @@ class Battleground
         float m_TeamStartLocO[BG_TEAMS_COUNT];
         float m_StartMaxDist;
         uint32 ScriptId;
+		RewardItems m_WinnerItems;
+		RewardItems m_LoserItems;
 };
 #endif

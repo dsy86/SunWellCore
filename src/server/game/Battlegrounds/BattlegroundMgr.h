@@ -51,6 +51,10 @@ struct CreateBattlegroundData
     float Team2StartLocO;
     float StartMaxDist;
     uint32 scriptId;
+	uint32 winnerItem;
+	uint32 winnerItemCount;
+	uint32 loserItem;
+	uint32 loserItemCount;
 };
 
 struct GroupQueueInfo;

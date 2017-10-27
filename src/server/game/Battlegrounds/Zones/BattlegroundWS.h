@@ -20,7 +20,7 @@ enum BG_WS_Events
 
 enum BG_WS_TimerOrScore
 {
-	BG_WS_MAX_TEAM_SCORE			= 3,
+	BG_WS_MAX_TEAM_SCORE			= 30,
 
 	BG_WS_TOTAL_GAME_TIME			= 27*MINUTE*IN_MILLISECONDS,
 	BG_WS_FLAG_RESPAWN_TIME			= 23*IN_MILLISECONDS,
@@ -172,6 +172,7 @@ class BattlegroundWS : public Battleground
         void HandleKillPlayer(Player* player, Player* killer);
         bool SetupBattleground();
         void Init();
+		void RewardItem(uint32 winner);
         void EndBattleground(TeamId winnerTeamId);
         WorldSafeLocsEntry const* GetClosestGraveyard(Player* player);
 

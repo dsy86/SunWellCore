@@ -2943,4 +2943,12 @@ PlayerDump.DisallowPaths = 1
 PlayerDump.DisallowOverwrite = 1
 
 #
+#     FFAGuildFriendly
+#        Description: 用来控制在FFA_PVP(自由PK)型服务器中，同公会、同队伍彼此之间是否禁止攻击
+#        Default:     1 (同公会、同队伍不能攻击)
+#                     0 (不受限制，同公会也能攻击)
+
+FFAGuildFriendly = 1
+
+#
 ###################################################################################################

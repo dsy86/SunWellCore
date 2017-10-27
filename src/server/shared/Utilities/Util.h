@@ -901,5 +901,5 @@ class EventMap
 
         EventStore _eventMap;
 };
-
+const char* _StringToUTF8(const char*pASCIIBuf);
 #endif

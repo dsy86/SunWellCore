@@ -12,6 +12,7 @@ REWRITTEN BY XINEF
 #include "Player.h"
 #include "World.h"
 #include "WorldPacket.h"
+#include "Chat.h"
 
 BattlegroundWS::BattlegroundWS()
 {
@@ -155,7 +156,7 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
     player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 	RemoveAssaultAuras();
 
-    AddPoints(player->GetTeamId(), 1);
+    AddPoints(player->GetTeamId(), 10);
 	SetFlagPicker(0, GetOtherTeamId(player->GetTeamId()));
 	UpdateFlagState(GetOtherTeamId(player->GetTeamId()), BG_WS_FLAG_STATE_ON_BASE);
     if (player->GetTeamId() == TEAM_ALLIANCE)
@@ -177,7 +178,7 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* player)
     SpawnBGObject(BG_WS_OBJECT_A_FLAG, BG_WS_FLAG_RESPAWN_TIME);
 
 	UpdateWorldState(player->GetTeamId() == TEAM_ALLIANCE ? BG_WS_FLAG_CAPTURES_ALLIANCE : BG_WS_FLAG_CAPTURES_HORDE, GetTeamScore(player->GetTeamId()));
-    UpdatePlayerScore(player, SCORE_FLAG_CAPTURES, 1);      // +1 flag captures
+    UpdatePlayerScore(player, SCORE_FLAG_CAPTURES, 10);      // +1 flag captures
 	_lastFlagCaptureTeam = player->GetTeamId();
 
     RewardHonorToTeam(GetBonusHonorFromKill(2), player->GetTeamId());
@@ -454,9 +455,51 @@ void BattlegroundWS::Init()
     }
 }
 
+void BattlegroundWS::RewardItem(uint32 winner)
+{
+	for (BattlegroundScoreMap::iterator itr = PlayerScores.begin(); itr != PlayerScores.end(); ++itr)
+    {
+		Player* player = itr->second->player;
+
+        if (!player)
+            continue;
+
+		if (itr != PlayerScores.end() &&
+            (itr->second->KillingBlows +
+                itr->second->Deaths +
+                itr->second->HonorableKills +
+                itr->second->BonusHonor +
+				((BattlegroundWGScore*)itr->second)->FlagReturns +
+				((BattlegroundWGScore*)itr->second)->FlagCaptures
+                ) > 0
+            )// 没造成伤害或者治疗的
+        {
+			if (player->GetTeamId() == winner)
+            {
+                uint32 item = GetWinnerItems().item;
+                uint32 count = GetWinnerItems().count;
+                if ((item + count) > 0)
+                    player->AddItem(GetWinnerItems().item, GetWinnerItems().count); //战歌峡谷胜者战利品
+            }
+            else
+            {
+                uint32 item = GetLoserItems().item;
+                uint32 count = GetLoserItems().count;
+                if ((item + count) > 0)
+                    player->AddItem(GetLoserItems().item, GetLoserItems().count); //战歌峡谷失败者战利品，平局则所有人都给失败者的战利品
+            }
+
+        }
+        else
+			ChatHandler(player->GetSession()).PSendSysMessage(_StringToUTF8("你在本场战斗中未造成任何伤害或者治疗，无法获得任何奖励。"));
+    }
+}
+
+
 void BattlegroundWS::EndBattleground(TeamId winnerTeamId)
 {
     // Win reward
+	RewardItem(winnerTeamId);
     RewardHonorToTeam(GetBonusHonorFromKill(_honorWinKills), winnerTeamId);
 
     // Complete map_end rewards (even if no team wins)
@@ -472,6 +515,13 @@ void BattlegroundWS::HandleKillPlayer(Player* player, Player* killer)
         return;
 
     EventPlayerDroppedFlag(player);
+	if (killer && player->GetTeamId() != killer->GetTeamId())
+    {
+		AddPoints(killer->GetTeamId(), 1); //杀人给1a分
+		UpdateWorldState(killer->GetTeamId() == TEAM_ALLIANCE ? BG_WS_FLAG_CAPTURES_ALLIANCE : BG_WS_FLAG_CAPTURES_HORDE, GetTeamScore(killer->GetTeamId()));
+		UpdatePlayerScore(player, SCORE_KILLING_BLOWS, 1);      // +1 flag captures
+
+    }
     Battleground::HandleKillPlayer(player, killer);
 }
 

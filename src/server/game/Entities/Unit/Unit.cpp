@@ -9163,11 +9163,22 @@ ReputationRank Unit::GetReactionTo(Unit const* target) const
                     return REP_FRIENDLY; // return true to allow config option AllowTwoSide.Interaction.Group to work
                     // however client seems to allow mixed group parties, because in 13850 client it works like:
                     // return GetFactionReactionTo(GetFactionTemplateEntry(), target);
+				if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY) && selfPlayerOwner->GetGuild() && targetPlayerOwner->GetGuild() && selfPlayerOwner->GetGuild() == targetPlayerOwner->GetGuild())
+					return REP_FRIENDLY;
             }
 
             // check FFA_PVP
-            if (IsFFAPvP() && target->IsFFAPvP())
-                return REP_HOSTILE;
+			if (IsFFAPvP() && target->IsFFAPvP())
+			{
+				if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY))
+				{
+					if (selfPlayerOwner->GetGuild() && targetPlayerOwner->GetGuild() && selfPlayerOwner->GetGuild() == targetPlayerOwner->GetGuild())
+						return REP_FRIENDLY;
+					if (selfPlayerOwner->IsInRaidWith(targetPlayerOwner))
+						return REP_FRIENDLY; // return true to allow config option AllowTwoSide.Interaction.Group to work
+				}
+				return REP_HOSTILE;
+			}
 
             if (selfPlayerOwner)
             {
@@ -19194,7 +19205,21 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
             // FG: pretend that OTHER players in own group are friendly ("blue")
             else if (index == UNIT_FIELD_BYTES_2 || index == UNIT_FIELD_FACTIONTEMPLATE)
             {
-				if (IsControlledByPlayer() && target != this && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) && IsInRaidWith(target))
+				if (IsControlledByPlayer() && target != this && sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY))
+				{
+                    Player* me = GetAffectingPlayer();
+                    Player* targetPlayer = target->GetAffectingPlayer();
+					if (me && targetPlayer && me->IsFFAPvP() && targetPlayer->IsFFAPvP() && me->GetGuildId() == targetPlayer->GetGuildId() != 0)
+					{
+						if (index == UNIT_FIELD_BYTES_2)
+							fieldBuffer << (m_uint32Values[UNIT_FIELD_BYTES_2] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8)); // this flag is at uint8 offset 1 !!
+							//fieldBuffer << (m_uint32Values[index] & 0xFFFFF2FF); // clear UNIT_BYTE2_FLAG_PVP, UNIT_BYTE2_FLAG_FFA_PVP, UNIT_BYTE2_FLAG_SANCTUARY
+						else
+							// pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
+							fieldBuffer << uint32(target->getFaction());
+					}
+				}
+				else if (IsControlledByPlayer() && target != this && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) && IsInRaidWith(target))
 				{
 					FactionTemplateEntry const* ft1 = GetFactionTemplateEntry();
 					FactionTemplateEntry const* ft2 = target->GetFactionTemplateEntry();

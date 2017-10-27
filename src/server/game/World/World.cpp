@@ -118,7 +118,7 @@ World::World()
     m_NextRandomBGReset = 0;
     m_NextGuildReset = 0;
 
-    m_defaultDbcLocale = LOCALE_enUS;
+	m_defaultDbcLocale = LOCALE_zhCN;
 
     mail_expire_check_timer = 0;
     m_updateTime = 0;
@@ -1219,7 +1219,9 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_PDUMP_NO_PATHS] = sConfigMgr->GetBoolDefault("PlayerDump.DisallowPaths", true);
     m_bool_configs[CONFIG_PDUMP_NO_OVERWRITE] = sConfigMgr->GetBoolDefault("PlayerDump.DisallowOverwrite", true);
     m_bool_configs[CONFIG_FREE_DUAL_SPEC] = sConfigMgr->GetBoolDefault("FreeDualTalentSpecialization", false);
-    m_bool_configs[CONFIG_ENABLE_MMAPS] = sConfigMgr->GetBoolDefault("MoveMaps.Enable", true);
+	m_bool_configs[CONFIG_ENABLE_MMAPS] = sConfigMgr->GetBoolDefault("MoveMaps.Enable", true);
+	m_bool_configs[CONFIG_FFA_GUILD_FRIENDLY] = sConfigMgr->GetBoolDefault("FFAGuildFriendly", true);
+
     MMAP::MMapFactory::InitializeDisabledMaps();
 
     // Wintergrasp

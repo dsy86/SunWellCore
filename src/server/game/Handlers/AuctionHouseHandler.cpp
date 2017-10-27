@@ -259,7 +259,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket & recvData)
 		if (!_player->HasItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), uint32(deposit)))
         {
             SendAuctionCommandResult(0, AUCTION_SELL_ITEM, ERR_AUCTION_NOT_ENOUGHT_MONEY);
-			ChatHandler(_player->GetSession()).PSendSysMessage("You dont have enough points. ");
+			ChatHandler(_player->GetSession()).PSendSysMessage(_StringToUTF8("你的点券不够，点券拍卖行内1铜币=1点券。 "));
             return;
         }
 
@@ -438,8 +438,8 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket & recvData)
     {
         //you don't have enought money!, client tests!
         //SendAuctionCommandResult(auction->auctionId, AUCTION_PLACE_BID, ???);
-		ChatHandler(player->GetSession()).PSendSysMessage("You dont have enough points. ");
-        return;
+		ChatHandler(player->GetSession()).PSendSysMessage(_StringToUTF8("你的点券不够，点券拍卖行内1铜币=1点券。 "));
+		return;
     }
 
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
@@ -547,7 +547,7 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket & recvData)
                 //if (!player->HasEnoughMoney(auctionCut))          //player doesn't have enough money, maybe message needed
 				if (!player->HasItemCount(sWorld->getIntConfig(CONFIG_POINT_ITEM), auctionCut))
 				{
-					ChatHandler(player->GetSession()).PSendSysMessage("You dont have enough points. ");
+					ChatHandler(player->GetSession()).PSendSysMessage(_StringToUTF8("你的点券不够，点券拍卖行内1铜币=1点券。 "));
 					return;
 				}
                 //some auctionBidderNotification would be needed, but don't know that parts..

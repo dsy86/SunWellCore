@@ -573,6 +573,7 @@ bool BattlegroundMgr::CreateBattleground(CreateBattlegroundData& data)
     bg->SetStartMaxDist(data.StartMaxDist);
     bg->SetLevelRange(data.LevelMin, data.LevelMax);
     bg->SetScriptId(data.scriptId);
+	bg->SetRewardItems(data.winnerItem, data.winnerItemCount, data.loserItem, data.loserItemCount);
 
     AddBattleground(bg);
 
@@ -582,8 +583,8 @@ bool BattlegroundMgr::CreateBattleground(CreateBattlegroundData& data)
 void BattlegroundMgr::CreateInitialBattlegrounds()
 {
     uint32 oldMSTime = getMSTime();
-    //                                               0   1                  2                  3       4       5                 6               7              8            9             10      11
-    QueryResult result = WorldDatabase.Query("SELECT id, MinPlayersPerTeam, MaxPlayersPerTeam, MinLvl, MaxLvl, AllianceStartLoc, AllianceStartO, HordeStartLoc, HordeStartO, StartMaxDist, Weight, ScriptName FROM battleground_template");
+    //                                               0     1                    2                    3         4         5                   6                 7                8              9               10        11            12            13                 14          15
+    QueryResult result = WorldDatabase.Query("SELECT a.id, a.MinPlayersPerTeam, a.MaxPlayersPerTeam, a.MinLvl, a.MaxLvl, a.AllianceStartLoc, a.AllianceStartO, a.HordeStartLoc, a.HordeStartO, a.StartMaxDist, a.Weight, a.ScriptName, b.winnerItem, b.winnerItemCount, b.loserItem, b.loserItemCount FROM battleground_template a LEFT JOIN dsy_battleground_reward b ON a.id = b.id");
 
     if (!result)
     {
@@ -680,6 +681,11 @@ void BattlegroundMgr::CreateInitialBattlegrounds()
                 continue;
             }
         }
+
+		data.winnerItem = fields[12].GetUInt32();
+		data.winnerItemCount = fields[13].GetUInt32();
+		data.loserItem = fields[14].GetUInt32();
+		data.loserItemCount = fields[15].GetUInt32();
 
         if (!CreateBattleground(data))
             continue;
