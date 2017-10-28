@@ -2253,6 +2253,20 @@ bool Guild::AddMember(uint64 guid, uint8 rankId)
     SQLTransaction trans(NULL);
     member->SaveToDB(trans);
 
+    if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY))
+    {
+        if (Map* map = player->GetMap())
+        {
+            Map::PlayerList const &PlayerList = map->GetPlayers();
+            for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                if (i->GetSource() && i->GetSource()->GetGuildId() == GetId())
+                {
+                    player->SendUpdateToPlayer(i->GetSource());
+                    i->GetSource()->SendUpdateToPlayer(player);
+                }
+        }
+    }
+
     _UpdateAccountsNumber();
     _LogEvent(GUILD_EVENT_LOG_JOIN_GUILD, lowguid);
     _BroadcastEvent(GE_JOINED, guid, name.c_str());
@@ -2322,6 +2336,20 @@ void Guild::DeleteMember(uint64 guid, bool isDisbanding, bool isKicked, bool can
     _DeleteMemberFromDB(lowguid);
     if (!isDisbanding)
         _UpdateAccountsNumber();
+
+    if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY))
+    {
+        if (Map* map = player->GetMap())
+        {
+            Map::PlayerList const &PlayerList = map->GetPlayers();
+            for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+            if (i->GetSource() && i->GetSource()->GetGuildId() == GetId())
+            {
+                player->SendUpdateToPlayer(i->GetSource());
+                i->GetSource()->SendUpdateToPlayer(player);
+            }
+        }
+    }
 }
 
 bool Guild::ChangeMemberRank(uint64 guid, uint8 newRank)
