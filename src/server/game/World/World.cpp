@@ -1220,7 +1220,7 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_PDUMP_NO_OVERWRITE] = sConfigMgr->GetBoolDefault("PlayerDump.DisallowOverwrite", true);
     m_bool_configs[CONFIG_FREE_DUAL_SPEC] = sConfigMgr->GetBoolDefault("FreeDualTalentSpecialization", false);
 	m_bool_configs[CONFIG_ENABLE_MMAPS] = sConfigMgr->GetBoolDefault("MoveMaps.Enable", true);
-	m_bool_configs[CONFIG_FFA_GUILD_FRIENDLY] = sConfigMgr->GetBoolDefault("FFAGuildFriendly", true);
+    m_bool_configs[CONFIG_FFA_GUILD_FRIENDLY] = sConfigMgr->GetBoolDefault("FFAGuildFriendly", true);
 
     MMAP::MMapFactory::InitializeDisabledMaps();
 
@@ -1232,6 +1232,8 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_WINTERGRASP_BATTLETIME] = sConfigMgr->GetIntDefault("Wintergrasp.BattleTimer", 30);
     m_int_configs[CONFIG_WINTERGRASP_NOBATTLETIME] = sConfigMgr->GetIntDefault("Wintergrasp.NoBattleTimer", 150);
     m_int_configs[CONFIG_WINTERGRASP_RESTART_AFTER_CRASH] = sConfigMgr->GetIntDefault("Wintergrasp.CrashRestartTimer", 10);
+    m_int_configs[CONFIG_FFA_LOWLEVEL_PROTECT] = sConfigMgr->GetIntDefault("FFALowLevelProtect", 15);
+
 
 	m_int_configs[CONFIG_BIRTHDAY_TIME] = sConfigMgr->GetIntDefault("BirthdayTime", 1222964635);
 	m_int_configs[CONFIG_POINT_ITEM] = sConfigMgr->GetIntDefault("PointItem", 50000);

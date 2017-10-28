@@ -9163,21 +9163,28 @@ ReputationRank Unit::GetReactionTo(Unit const* target) const
                     return REP_FRIENDLY; // return true to allow config option AllowTwoSide.Interaction.Group to work
                     // however client seems to allow mixed group parties, because in 13850 client it works like:
                     // return GetFactionReactionTo(GetFactionTemplateEntry(), target);
-				if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY) && selfPlayerOwner->GetGuild() && targetPlayerOwner->GetGuild() && selfPlayerOwner->GetGuild() == targetPlayerOwner->GetGuild())
+                if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY) && selfPlayerOwner->GetGuildId() == targetPlayerOwner->GetGuildId() != 0)
 					return REP_FRIENDLY;
+                if (sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT) > 0 && (selfPlayerOwner->getLevel() <= sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT) || targetPlayerOwner->getLevel() <= sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT)))
+                    return REP_FRIENDLY;
             }
 
             // check FFA_PVP
 			if (IsFFAPvP() && target->IsFFAPvP())
 			{
-				if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY))
+                if (sWorld->getBoolConfig(CONFIG_FFA_GUILD_FRIENDLY))
 				{
-					if (selfPlayerOwner->GetGuild() && targetPlayerOwner->GetGuild() && selfPlayerOwner->GetGuild() == targetPlayerOwner->GetGuild())
+                    if (selfPlayerOwner->GetGuildId() == targetPlayerOwner->GetGuildId() != 0)
 						return REP_FRIENDLY;
-					if (selfPlayerOwner->IsInRaidWith(targetPlayerOwner))
-						return REP_FRIENDLY; // return true to allow config option AllowTwoSide.Interaction.Group to work
 				}
-				return REP_HOSTILE;
+                if (sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT) > 0)
+                {
+                    if (selfPlayerOwner->getLevel() <= sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT) || targetPlayerOwner->getLevel() <= sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT))
+                        return REP_FRIENDLY;
+                }
+                if (selfPlayerOwner->IsInRaidWith(targetPlayerOwner))
+                    return REP_FRIENDLY; // return true to allow config option AllowTwoSide.Interaction.Group to work
+                return REP_HOSTILE;
 			}
 
             if (selfPlayerOwner)
@@ -19219,8 +19226,23 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                     }
                     else
                         fieldBuffer << m_uint32Values[index];
-				}
-				else if (IsControlledByPlayer() && target != this && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) && IsInRaidWith(target))
+                }
+                else if (IsControlledByPlayer() && target != this && sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT) > 0)
+                {
+                    Player* me = GetAffectingPlayer();
+                    Player* targetPlayer = target->GetAffectingPlayer();
+                    if (me && targetPlayer && me->IsFFAPvP() && targetPlayer->IsFFAPvP() && (me->getLevel() <= sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT) || targetPlayer->getLevel() <= sWorld->getIntConfig(CONFIG_FFA_LOWLEVEL_PROTECT)))
+                    {
+                        if (index == UNIT_FIELD_BYTES_2)
+                            fieldBuffer << (m_uint32Values[UNIT_FIELD_BYTES_2] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8)); // this flag is at uint8 offset 1 !!
+                        else
+                            // pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
+                            fieldBuffer << uint32(target->getFaction());
+                    }
+                    else
+                        fieldBuffer << m_uint32Values[index];
+                }
+                else if (IsControlledByPlayer() && target != this && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) && IsInRaidWith(target))
 				{
 					FactionTemplateEntry const* ft1 = GetFactionTemplateEntry();
 					FactionTemplateEntry const* ft2 = target->GetFactionTemplateEntry();
